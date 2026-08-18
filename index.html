@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tating — Drum notation by touch</title>
+<meta name="description" content="Tap a groove, hear it, read it, practise it. One purchase. No subscription. No ads.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#17120E;
+    --paper:#EBE1CC;
+    --paper-dim:#DDD0B4;
+    --brass:#C9A227;
+    --snare:#B23A3A;
+    --kick:#2C3E5C;
+    --tom:#7C8C6B;
+    --line: rgba(23,18,14,0.14);
+    --line-strong: rgba(23,18,14,0.28);
+    --shadow: 0 20px 50px rgba(23,18,14,0.18);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  a{color:inherit;}
+  :focus-visible{outline:3px solid var(--brass); outline-offset:3px;}
+
+  h1,h2,h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color: rgba(23,18,14,0.6);
+  }
+  .mono{font-family:'JetBrains Mono', monospace;}
+
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 28px;
+  }
+
+  /* NAV */
+  nav.top{
+    position:sticky; top:0; z-index:50;
+    background:rgba(235,225,204,0.86);
+    backdrop-filter: blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  nav.top .wrap{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:16px; padding-bottom:16px;
+  }
+  .wordmark{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.35rem;
+    letter-spacing:-0.01em;
+    display:flex; align-items:center; gap:10px;
+  }
+  .wordmark .dot{
+    width:9px; height:9px; border-radius:50%;
+    background:var(--snare);
+    display:inline-block;
+    transform:translateY(-1px);
+  }
+  .nav-links{display:flex; gap:22px; align-items:center;}
+  .nav-links a{
+    font-size:0.86rem; text-decoration:none;
+    color: rgba(23,18,14,0.72);
+    border-bottom:1px solid transparent;
+    padding-bottom:2px;
+    transition: color .15s, border-color .15s;
+  }
+  .nav-links a:hover{color:var(--ink); border-color:var(--line-strong);}
+
+  /* HERO */
+  header.hero{
+    padding:76px 0 60px;
+    border-bottom:1px solid var(--line);
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap:56px;
+    align-items:center;
+  }
+  .hero h1{
+    font-size:clamp(2.5rem, 5vw, 3.6rem);
+    line-height:1.04;
+    margin-top:14px;
+  }
+  .hero p.sub{
+    font-size:1.14rem;
+    line-height:1.5;
+    max-width:44ch;
+    margin-top:20px;
+    color: rgba(23,18,14,0.82);
+  }
+  .hero-cta{
+    display:flex; gap:14px; margin-top:32px; flex-wrap:wrap;
+  }
+  .trust-line{
+    margin-top:22px;
+    font-size:0.82rem;
+    color: rgba(23,18,14,0.6);
+  }
+
+  /* SIGNATURE GROOVE PLAYER */
+  .groove-card{
+    background:var(--ink);
+    border-radius:14px;
+    padding:26px 22px 20px;
+    box-shadow:var(--shadow);
+    color:var(--paper);
+  }
+  .groove-card .gc-head{
+    display:flex; justify-content:space-between; align-items:baseline;
+    margin-bottom:16px;
+  }
+  .gc-title{font-family:'JetBrains Mono', monospace; font-size:0.78rem; letter-spacing:0.06em; color:rgba(235,225,204,0.6);}
+  .gc-tempo{font-family:'JetBrains Mono', monospace; font-size:0.78rem; color:var(--brass);}
+
+  .grid-rows{display:flex; flex-direction:column; gap:6px;}
+  .grid-row{display:grid; grid-template-columns: 58px repeat(16, 1fr); gap:5px; align-items:center;}
+  .row-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.66rem;
+    color: rgba(235,225,204,0.55);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+  }
+  .cell{
+    aspect-ratio:1/1;
+    border-radius:4px;
+    background: rgba(235,225,204,0.08);
+    position:relative;
+  }
+  .cell.beat{background: rgba(235,225,204,0.14);}
+  .cell.note::after{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:4px;
+    background: var(--note-color, var(--brass));
+    opacity:0.35;
+  }
+  .cell.note.active::after{
+    opacity:1;
+    box-shadow: 0 0 14px 1px var(--note-color, var(--brass));
+  }
+  .playhead-col{background: rgba(235,225,204,0.16) !important;}
+
+  .staff-strip{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1px dashed rgba(235,225,204,0.2);
+    height:52px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .cell.note.active::after{ box-shadow:none; }
+  }
+
+  /* SECTIONS */
+  section.feature{
+    padding:88px 0;
+    border-bottom:1px solid var(--line);
+  }
+  section.feature .feat-grid{
+    display:grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap:64px;
+    align-items:center;
+  }
+  section.feature.reverse .feat-grid{
+    grid-template-columns: 1.15fr 0.85fr;
+  }
+  section.feature.reverse .feat-copy{order:2;}
+  section.feature.reverse .feat-visual{order:1;}
+
+  .feat-index{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color: var(--brass);
+    letter-spacing:0.05em;
+  }
+  .feat-copy h2{
+    font-size:2rem;
+    margin-top:10px;
+    line-height:1.12;
+  }
+  .feat-copy p{
+    font-size:1.04rem;
+    line-height:1.6;
+    color: rgba(23,18,14,0.78);
+    max-width:42ch;
+    margin-top:16px;
+  }
+
+  .feat-visual{
+    background: var(--ink);
+    border-radius:14px;
+    box-shadow: var(--shadow);
+    padding:26px;
+    min-height:260px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--paper);
+  }
+
+  /* PocketCheck timing cloud */
+  .cloud-panel{width:100%;}
+  .cloud-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    color: rgba(235,225,204,0.55);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    margin-bottom:14px;
+  }
+  .cloud-track{
+    position:relative;
+    height:120px;
+    border-top:1px solid rgba(235,225,204,0.18);
+    border-bottom:1px solid rgba(235,225,204,0.18);
+  }
+  .cloud-track .beat-line{
+    position:absolute; left:50%; top:0; bottom:0;
+    width:1px; background: var(--brass);
+  }
+  .cloud-track .beat-line::after{
+    content:"on the beat";
+    position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62rem;
+    color: rgba(235,225,204,0.45);
+    white-space:nowrap;
+  }
+  .hit-dot{
+    position:absolute;
+    width:9px; height:9px;
+    border-radius:50%;
+    background: var(--snare);
+    top:50%;
+    transform: translate(-50%,-50%);
+    opacity:0.85;
+  }
+
+  /* Notation excerpt */
+  .notation-panel{width:100%;}
+  .notation-panel svg{width:100%; height:auto; display:block;}
+
+  /* Footer / store badges */
+  footer{
+    padding:80px 0 50px;
+  }
+  .footer-top{
+    text-align:center;
+  }
+  .footer-top h2{
+    font-size:2.1rem;
+    max-width:20ch;
+    margin:14px auto 0;
+    line-height:1.14;
+  }
+  .badges{
+    display:flex; gap:16px; justify-content:center; margin-top:36px; flex-wrap:wrap;
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:10px;
+    background:var(--ink);
+    color:var(--paper);
+    padding:13px 20px;
+    border-radius:10px;
+    text-decoration:none;
+    font-size:0.9rem;
+    box-shadow: var(--shadow);
+    transition: transform .15s ease;
+  }
+  .badge:hover{transform: translateY(-2px);}
+  .badge .badge-text{display:flex; flex-direction:column; line-height:1.2;}
+  .badge .badge-text small{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.62rem;
+    color: rgba(235,225,204,0.55);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+  }
+  .badge .badge-text strong{font-family:'Fraunces', serif; font-weight:500; font-size:1rem;}
+  .badge-icon{width:22px; height:22px; flex-shrink:0;}
+
+  .foot-links{
+    margin-top:56px;
+    padding-top:26px;
+    border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:0.8rem;
+    color: rgba(23,18,14,0.6);
+    flex-wrap:wrap; gap:12px;
+  }
+  .foot-links a{text-decoration:underline; text-underline-offset:3px;}
+
+  @media (max-width: 820px){
+    .hero-grid, section.feature .feat-grid, section.feature.reverse .feat-grid{
+      grid-template-columns: 1fr;
+    }
+    section.feature.reverse .feat-copy, section.feature.reverse .feat-visual{order:initial;}
+    header.hero{padding:52px 0 44px;}
+    section.feature{padding:56px 0;}
+    .grid-row{grid-template-columns: 40px repeat(16, 1fr);}
+    .nav-links{gap:14px;}
+  }
+  @media (max-width: 520px){
+    .row-label{font-size:0.56rem;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="top">
+  <div class="wrap">
+    <div class="wordmark"><span class="dot" aria-hidden="true"></span>Tating</div>
+    <div class="nav-links">
+      <a href="#writing">Writing</a>
+      <a href="#pocketcheck">PocketCheck</a>
+      <a href="#notation">Notation</a>
+      <a href="#get-it">Get it</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">For drummers, by a drummer</p>
+      <h1>Tap it. Hear it.<br>Read it.</h1>
+      <p class="sub">Tap out a groove on a colour-coded grid and it instantly becomes real sheet music — with proper kit sounds, tempo control, and a way to check your timing against a real kit. Everything runs on your phone. Nothing gets uploaded.</p>
+      <div class="hero-cta">
+        <a class="badge" href="#get-it" style="padding:12px 22px;">
+          <span class="badge-text"><strong>See how to get it →</strong></span>
+        </a>
+      </div>
+      <p class="trust-line">One purchase, $9.99. No subscription. No ads. No sign-in.</p>
+    </div>
+
+    <div class="groove-card" aria-label="Animated preview of a drum groove being written on the Tating grid">
+      <div class="gc-head">
+        <span class="gc-title">4/4 · STRAIGHT</span>
+        <span class="gc-tempo" id="tempoReadout">96 BPM</span>
+      </div>
+      <div class="grid-rows" id="grooveGrid" style="--note-color:var(--brass);">
+        <!-- rows injected by JS -->
+      </div>
+      <div class="staff-strip">
+        <svg viewBox="0 0 480 52" width="100%" height="52" aria-hidden="true">
+          <line x1="0" y1="8" x2="480" y2="8" stroke="rgba(235,225,204,0.22)" stroke-width="1"/>
+          <line x1="0" y1="20" x2="480" y2="20" stroke="rgba(235,225,204,0.22)" stroke-width="1"/>
+          <line x1="0" y1="32" x2="480" y2="32" stroke="rgba(235,225,204,0.22)" stroke-width="1"/>
+          <line x1="0" y1="44" x2="480" y2="44" stroke="rgba(235,225,204,0.22)" stroke-width="1"/>
+          <g id="noteheads"></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="feature" id="writing">
+  <div class="wrap feat-grid">
+    <div class="feat-copy">
+      <p class="feat-index">01 — Writing</p>
+      <h2>From grid to engraved notation, in real time.</h2>
+      <p>Tap a cell to place a note, drag to paint a run, flick up for the open hat under the closed one. Fifteen time signatures, straight or triplet grids, quarter notes down to 32nds — odd meters beamed and counted the way drummers actually group them. What takes half an hour on a computer takes about two minutes here.</p>
+    </div>
+    <div class="feat-visual">
+      <div class="cloud-panel">
+        <div class="cloud-label">Live grid → staff</div>
+        <div class="grid-rows" id="writingGrid" style="--note-color:var(--tom);"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feature reverse" id="pocketcheck">
+  <div class="wrap feat-grid">
+    <div class="feat-copy">
+      <p class="feat-index">02 — PocketCheck</p>
+      <h2>Play it for real. See where you actually land.</h2>
+      <p>Play the groove on your own kit while Tating listens through the microphone, then shows exactly where every hit landed against the beat. It measures the speaker-to-mic delay first, so the reading is honest — and it reports placement, not a grade. Sitting behind the beat is a feel. What matters is how tight the cloud is. Audio is analysed in memory and never recorded or sent anywhere.</p>
+    </div>
+    <div class="feat-visual">
+      <div class="cloud-panel">
+        <div class="cloud-label">Your hits, against the beat</div>
+        <div class="cloud-track" id="cloudTrack" aria-label="Visualization of drum hits clustering near the beat"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="feature" id="notation">
+  <div class="wrap feat-grid">
+    <div class="feat-copy">
+      <p class="feat-index">03 — Reading</p>
+      <h2>Real engraved notation. No approximations.</h2>
+      <p>Noteheads, stems, beams, cross noteheads for cymbals — stems up for hands, down for feet, sticking written under the staff. Export it as a PDF gig chart, or as MIDI on the standard drum map straight into a DAW.</p>
+    </div>
+    <div class="feat-visual">
+      <div class="notation-panel">
+        <svg viewBox="0 0 560 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sample of engraved drum notation">
+          <g stroke="rgba(235,225,204,0.35)" stroke-width="1">
+            <line x1="20" y1="30" x2="540" y2="30"/>
+            <line x1="20" y1="48" x2="540" y2="48"/>
+            <line x1="20" y1="66" x2="540" y2="66"/>
+            <line x1="20" y1="84" x2="540" y2="84"/>
+            <line x1="20" y1="102" x2="540" y2="102"/>
+          </g>
+          <line x1="20" y1="30" x2="20" y2="102" stroke="rgba(235,225,204,0.5)" stroke-width="1.5"/>
+          <line x1="280" y1="30" x2="280" y2="102" stroke="rgba(235,225,204,0.4)" stroke-width="1"/>
+          <line x1="536" y1="30" x2="536" y2="102" stroke="rgba(235,225,204,0.5)" stroke-width="1.5"/>
+
+          <!-- hi-hat crosses (row above staff) -->
+          <g stroke="var(--brass)" stroke-width="2" fill="none">
+            <g id="xnote-1"><line x1="52" y1="16" x2="60" y2="24"/><line x1="60" y1="16" x2="52" y2="24"/></g>
+            <g id="xnote-2"><line x1="92" y1="16" x2="100" y2="24"/><line x1="100" y1="16" x2="92" y2="24"/></g>
+            <g id="xnote-3"><line x1="132" y1="16" x2="140" y2="24"/><line x1="140" y1="16" x2="132" y2="24"/></g>
+            <g id="xnote-4"><line x1="172" y1="16" x2="180" y2="24"/><line x1="180" y1="16" x2="172" y2="24"/></g>
+            <g id="xnote-5"><line x1="212" y1="16" x2="220" y2="24"/><line x1="220" y1="16" x2="212" y2="24"/></g>
+            <g id="xnote-6"><line x1="252" y1="16" x2="260" y2="24"/><line x1="260" y1="16" x2="252" y2="24"/></g>
+          </g>
+
+          <!-- snare noteheads, middle line, stems up -->
+          <g fill="var(--paper)">
+            <ellipse cx="132" cy="66" rx="6" ry="4.5"/>
+            <line x1="137.5" y1="66" x2="137.5" y2="20" stroke="var(--paper)" stroke-width="1.4"/>
+            <ellipse cx="212" cy="66" rx="6" ry="4.5"/>
+            <line x1="217.5" y1="66" x2="217.5" y2="20" stroke="var(--paper)" stroke-width="1.4"/>
+          </g>
+
+          <!-- kick noteheads, bottom, stems down -->
+          <g fill="var(--snare)">
+            <ellipse cx="52" cy="102" rx="6" ry="4.5"/>
+            <line x1="46.5" y1="102" x2="46.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+            <ellipse cx="172" cy="102" rx="6" ry="4.5"/>
+            <line x1="166.5" y1="102" x2="166.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+            <ellipse cx="252" cy="102" rx="6" ry="4.5"/>
+            <line x1="246.5" y1="102" x2="246.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+          </g>
+
+          <!-- second measure (mirrored, offset) -->
+          <g stroke="var(--brass)" stroke-width="2" fill="none">
+            <g><line x1="312" y1="16" x2="320" y2="24"/><line x1="320" y1="16" x2="312" y2="24"/></g>
+            <g><line x1="352" y1="16" x2="360" y2="24"/><line x1="360" y1="16" x2="352" y2="24"/></g>
+            <g><line x1="392" y1="16" x2="400" y2="24"/><line x1="400" y1="16" x2="392" y2="24"/></g>
+            <g><line x1="432" y1="16" x2="440" y2="24"/><line x1="440" y1="16" x2="432" y2="24"/></g>
+            <g><line x1="472" y1="16" x2="480" y2="24"/><line x1="480" y1="16" x2="472" y2="24"/></g>
+            <g><line x1="512" y1="16" x2="520" y2="24"/><line x1="520" y1="16" x2="512" y2="24"/></g>
+          </g>
+          <g fill="var(--paper)">
+            <ellipse cx="392" cy="66" rx="6" ry="4.5"/>
+            <line x1="397.5" y1="66" x2="397.5" y2="20" stroke="var(--paper)" stroke-width="1.4"/>
+            <ellipse cx="472" cy="66" rx="6" ry="4.5"/>
+            <line x1="477.5" y1="66" x2="477.5" y2="20" stroke="var(--paper)" stroke-width="1.4"/>
+          </g>
+          <g fill="var(--snare)">
+            <ellipse cx="312" cy="102" rx="6" ry="4.5"/>
+            <line x1="306.5" y1="102" x2="306.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+            <ellipse cx="432" cy="102" rx="6" ry="4.5"/>
+            <line x1="426.5" y1="102" x2="426.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+            <ellipse cx="512" cy="102" rx="6" ry="4.5"/>
+            <line x1="506.5" y1="102" x2="506.5" y2="130" stroke="var(--snare)" stroke-width="1.4"/>
+          </g>
+
+          <text x="20" y="152" font-family="JetBrains Mono, monospace" font-size="10" fill="rgba(235,225,204,0.5)">R L R L R L R L</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer id="get-it">
+  <div class="wrap">
+    <div class="footer-top">
+      <p class="eyebrow">Get it</p>
+      <h2>Drum notation by touch.<br>One purchase, no subscription.</h2>
+      <div class="badges">
+        <a class="badge" href="#" aria-label="Coming soon to Google Play">
+          <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 3L20 12L4 21V3Z" fill="var(--brass)"/></svg>
+          <span class="badge-text"><small>Coming soon to</small><strong>Google Play</strong></span>
+        </a>
+        <a class="badge" href="#" aria-label="Coming soon to the App Store">
+          <svg class="badge-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="3" stroke="var(--brass)" stroke-width="1.6"/><circle cx="12" cy="18.5" r="1.1" fill="var(--brass)"/></svg>
+          <span class="badge-text"><small>Coming soon to</small><strong>the App&nbsp;Store</strong></span>
+        </a>
+      </div>
+      <p class="trust-line" style="margin-top:20px;">Free tier is the whole tool, saved grooves capped at 10. Hundreds of grooves, fills, exercises, and all forty rudiments come with the $9.99 unlock.</p>
+    </div>
+
+    <div class="foot-links">
+      <span>© 2026 Tating</span>
+      <a href="https://bcrawford24.github.io/tating-privacy/" target="_blank" rel="noopener">Privacy policy</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Groove definition: 16 sixteenth-note steps, rows top-to-bottom
+  var rows = [
+    { label:'Hat',  color:'var(--brass)', steps:[0,2,4,6,8,10,12,14] },
+    { label:'Snare',color:'var(--snare)', steps:[4,12] },
+    { label:'Kick', color:'var(--kick)',  steps:[0,6,10] }
+  ];
+
+  function buildGrid(containerId){
+    var container = document.getElementById(containerId);
+    if(!container) return null;
+    container.innerHTML = '';
+    var cellRefs = [];
+    rows.forEach(function(row){
+      var rowEl = document.createElement('div');
+      rowEl.className = 'grid-row';
+      var labelEl = document.createElement('div');
+      labelEl.className = 'row-label';
+      labelEl.textContent = row.label;
+      rowEl.appendChild(labelEl);
+      var rowCells = [];
+      for(var i=0;i<16;i++){
+        var cell = document.createElement('div');
+        var isNote = row.steps.indexOf(i) !== -1;
+        var isBeat = (i % 4 === 0);
+        cell.className = 'cell' + (isNote ? ' note' : '') + (isBeat ? ' beat' : '');
+        cell.style.setProperty('--note-color', row.color);
+        rowEl.appendChild(cell);
+        rowCells.push(cell);
+      }
+      container.appendChild(rowEl);
+      cellRefs.push({row:row, cells:rowCells});
+    });
+    return cellRefs;
+  }
+
+  var heroGrid = buildGrid('grooveGrid');
+  var writingGrid = buildGrid('writingGrid');
+
+  function stepAnimation(gridRefs, tempoEl){
+    if(!gridRefs) return;
+    var step = 0;
+    var bpm = 96;
+    function tick(){
+      gridRefs.forEach(function(entry){
+        entry.cells.forEach(function(cell, idx){
+          cell.classList.toggle('active', idx === step && cell.classList.contains('note'));
+        });
+      });
+      step = (step + 1) % 16;
+      if(tempoEl){
+        tempoEl.textContent = bpm + ' BPM';
+      }
+    }
+    tick();
+    if(!reduceMotion){
+      setInterval(tick, 260);
+    }
+  }
+
+  stepAnimation(heroGrid, document.getElementById('tempoReadout'));
+  stepAnimation(writingGrid, null);
+
+  // Noteheads that ride along with the hero staff strip
+  var noteheadsG = document.getElementById('noteheads');
+  if(noteheadsG){
+    var positions = [16, 46, 76, 106, 136, 166, 196, 226, 256, 286, 316, 346, 376, 406, 436, 466];
+    var heights = {0:44, 6:32, 10:44, 4:20, 12:20};
+    for(var i=0;i<16;i++){
+      if(heights[i] !== undefined){
+        var el = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+        el.setAttribute('cx', positions[i]);
+        el.setAttribute('cy', heights[i]);
+        el.setAttribute('rx', 4);
+        el.setAttribute('ry', 3);
+        el.setAttribute('fill', i===4||i===12 ? 'var(--paper)' : 'var(--brass)');
+        el.dataset.step = i;
+        noteheadsG.appendChild(el);
+      }
+    }
+  }
+
+  // PocketCheck timing cloud
+  var track = document.getElementById('cloudTrack');
+  if(track){
+    var line = document.createElement('div');
+    line.className = 'beat-line';
+    track.appendChild(line);
+    var offsets = [-2, 4, -6, 1, 3, -1, 7, -4, 2, -3, 0, 5, -2, 1, -5, 3];
+    offsets.forEach(function(off, i){
+      var dot = document.createElement('div');
+      dot.className = 'hit-dot';
+      var pct = 50 + off; // percent from left
+      dot.style.left = pct + '%';
+      dot.style.top = (30 + (i % 5) * 15) + 'px';
+      dot.style.opacity = 0.55 + Math.random()*0.35;
+      track.appendChild(dot);
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
